@@ -31,6 +31,8 @@
          encode/2, in_transaction/1,
          transaction/2, transaction/3, transaction/4]).
 
+-export ([hibernate/1]).
+
 -export_type([connection/0, server_reason/0, query_result/0]).
 
 -behaviour(gen_server).
@@ -747,6 +749,10 @@ handle_call(commit, _From, State = #state{socket = Socket, sockmod = SockMod,
     {reply, ok, State1#state{transaction_level = L - 1}}.
 
 %% @private
+handle_cast(hibernate, State) ->
+    % force gc
+    {noreply, State, hibernate};
+
 handle_cast(_Msg, State) ->
     {noreply, State}.
 
@@ -950,3 +956,6 @@ stop_server(Reason,
                          [ConnId, Reason]),
   ok = gen_tcp:close(Socket),
   {stop, Reason, State#state{socket = undefined, connection_id = undefined}}.
+
+hibernate(Pid) ->
+  gen_server:cast(Pid,hibernate).
